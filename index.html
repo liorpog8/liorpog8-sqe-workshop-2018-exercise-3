@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <style>
+        table {
+            width: 100%;
+            height: 100%;
+        }
+        .textAreaWrapper {
+            width: 100%;
+            height: 80vh;
+        }
+        textarea {
+            width: 80%;
+            height: 95%;
+        }
+    </style>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+</head>
+<body>
+<table>
+    <tr>
+        <td>
+            <div>
+                <label>Origin code</label>
+            </div>
+        </td>
+        <td width="50%">
+            <div>
+                <label>Substituted</label>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="textAreaWrapper">
+                <textarea id="originCodeInput" title="Enter code here"></textarea>
+            </div>
+        </td>
+        <td>
+            <div id="substituteCodeResult">
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div>
+                <textarea id="funcArgsInput" title="Enter arguments here"></textarea>
+            </div>
+        </td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>
+            <div>
+                <button id="codeSubmissionButton">Substitute</button>
+            </div>
+        </td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+</table>
+
+<script src="dist/bundle.js"></script>
+</body>
+</html>
