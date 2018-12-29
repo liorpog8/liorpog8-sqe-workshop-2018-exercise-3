@@ -1,150 +1,100 @@
 import assert from 'assert';
-import {parseCode, substituteCode, getLines} from '../src/js/code-analyzer';
+import {parseCode, generateGraph, evaluate} from '../src/js/code-analyzer';
 
-describe('Empty Function', () => {
+describe('example1', () => {
     it('', () => {
-        let code = 'function foo(){\nreturn 1;\n}';
-        let withoutArgs = substituteCode(parseCode(code), {}, '', false);
-        let withArgs = substituteCode(parseCode(code), {}, '', true);
-        assert.deepEqual(getLines(withoutArgs['substituted'], withArgs['greenLines'], withArgs['redLines'], withoutArgs['ignoreRows']),
-            [{line:'function foo() {', color:'black'},{line:'    return 1;', color:'black'},{line:'}', color:'black'}]);});
+        let func = 'function foo(x, y, z){\n' +
+            '    let a = x + 1;\n' +
+            '    let b = a + y;\n' +
+            '    let c = 0;\n' +
+            '    \n' +
+            '    if (b < z) {\n' +
+            '        c = c + 5;\n' +
+            '    } else if (b < z * 2) {\n' +
+            '        c = c + x + 5;\n' +
+            '    } else {\n' +
+            '        c = c + z + 5;\n' +
+            '    }\n' +
+            '    return c;\n' +
+            '}\n';
+        assert.deepEqual(generateGraph(func, '1, 2, 3').replace(/\n/g, ' ').replace(/ {2}/g, ' '), "digraph cfg { forcelabels=true n0 [label=\"let a = x + 1; let b = a + y; let c = 0;\", xlabel = 1, shape=rectangle, style = filled, fillcolor = green] n1 [label=\"b < z\", xlabel = 2, shape=diamond, style = filled, fillcolor = green] n2 [label=\"c = c + 5\", xlabel = 3, shape=rectangle,] n3 [label=\"return c;\", xlabel = 4, shape=rectangle, style = filled, fillcolor = green] n4 [label=\"b < z * 2\", xlabel = 5, shape=diamond, style = filled, fillcolor = green] n5 [label=\"c = c + x + 5\", xlabel = 6, shape=rectangle, style = filled, fillcolor = green] n6 [label=\"c = c + z + 5\", xlabel = 7, shape=rectangle,] n0 -> n1 [] n1 -> n2 [label=\"T\"] n1 -> n4 [label=\"F\"] n2 -> n3 [] n4 -> n5 [label=\"T\"] n4 -> n6 [label=\"F\"] n5 -> n3 [] n6 -> n3 [] }");
+    });
 });
 
-describe('Number Argument', () => {
+describe('example2', () => {
     it('', () => {
-        let code = 'function foo(x){\nreturn 1;\n}';
-        let withoutArgs = substituteCode(parseCode(code), {}, '', false);
-        let withArgs = substituteCode(parseCode(code), {}, '1', true);
-        assert.deepEqual(getLines(withoutArgs['substituted'], withArgs['greenLines'], withArgs['redLines'], withoutArgs['ignoreRows']),
-            [{line:'function foo(x) {', color:'black'}, {line:'    return 1;', color:'black'}, {line:'}', color:'black'}]);});
-
+        let func = 'function foo(x, y, z){\n' +
+            '    let a = x + 1;\n' +
+            '    let b = a + y;\n' +
+            '    let c = 0;\n' +
+            '    \n' +
+            '    while (a < z) {\n' +
+            '        c = a + b;\n' +
+            '        z = c * 2;\n' +
+            '        a++;\n' +
+            '    }\n' +
+            '    return z;\n' +
+            '}\n';
+        assert.deepEqual(generateGraph(func, '').replace(/\n/g, ' ').replace(/ {2}/g, ' '), "digraph cfg { forcelabels=true n0 [label=\"let a = x + 1; let b = a + y; let c = 0;\", xlabel = 1, shape=rectangle,] n1 [label=\"a < z\", xlabel = 2, shape=diamond,] n2 [label=\"c = a + b z = c * 2 a++\", xlabel = 3, shape=rectangle,] n3 [label=\"return z;\", xlabel = 4, shape=rectangle,] n0 -> n1 [] n1 -> n2 [label=\"T\"] n1 -> n3 [label=\"F\"] n2 -> n1 [] }");
+    });
 });
 
-describe('String Argument', () => {
+describe('basic', () => {
     it('', () => {
-        let code = 'function foo(x){\nlet a = "a";\nif(a == x){\nreturn x + a;\n}else{\nreturn a\n}\n}';
-        let withoutArgs = substituteCode(parseCode(code), {}, '', false);
-        let withArgs = substituteCode(parseCode(code), {}, '"b"', true);
-        assert.deepEqual(getLines(withoutArgs['substituted'], withArgs['greenLines'], withArgs['redLines'], withoutArgs['ignoreRows']),
-            [
-                {line:'function foo(x) {', color:'black'},
-                {line:'    if (\'a\' == x) {', color:'red'},
-                {line:'        return x + \'a\';', color:'black'},
-                {line:'    } else {', color:'green'},
-                {line:'        return \'a\';', color:'black'},
-                {line:'    }', color:'black'},
-                {line:'}', color:'black'}]);});
+        let func = 'function foo(x){\n' +
+            '    let a = x + 1;\n' +
+            '    return a;\n' +
+            '}\n';
+        assert.deepEqual(generateGraph(func, '5').replace(/\n/g, ' ').replace(/ {2}/g, ' '), "digraph cfg { forcelabels=true n0 [label=\"let a = x + 1;\", xlabel = 1, shape=rectangle, style = filled, fillcolor = green] n1 [label=\"return a;\", xlabel = 2, shape=rectangle, style = filled, fillcolor = green] n0 -> n1 [] }");
+    });
 });
 
-describe('Array Argument', () => {
-    it('with if condition', () => {
-        let code = 'function foo(x){\n    x[0] = 0;\n    return x[0];\n}';
-        let withoutArgs = substituteCode(parseCode(code), {}, '', false);
-        let withArgs = substituteCode(parseCode(code), {}, '[1,2,3]', true);
-        assert.deepEqual(getLines(withoutArgs['substituted'], withArgs['greenLines'], withArgs['redLines'], withoutArgs['ignoreRows']),
-            [
-                {line:'function foo(x) {', color:'black'},
-                {line:'    x[0] = 0;', color:'black'},
-                {line:'    return x[0];', color:'black'},
-                {line:'}', color:'black'}]);});
+describe('array', () => {
+    it('', () => {
+        let func = 'function foo(x){\n' +
+            '    let c = 0;\n' +
+            '    \n' +
+            '    if (x[0] > 5) {\n' +
+            '        c = x[0];\n' +
+            '    }\n' +
+            '    return c;\n' +
+            '}\n';
+        assert.deepEqual(generateGraph(func, '[1, 2, 3]').replace(/\n/g, ' ').replace(/ {2}/g, ' '), "digraph cfg { forcelabels=true n0 [label=\"let c = 0;\", xlabel = 1, shape=rectangle, style = filled, fillcolor = green] n1 [label=\"x[0] > 5\", xlabel = 2, shape=diamond, style = filled, fillcolor = green] n2 [label=\"c = x[0]\", xlabel = 3, shape=rectangle,] n3 [label=\"return c;\", xlabel = 4, shape=rectangle, style = filled, fillcolor = green] n0 -> n1 [] n1 -> n2 [label=\"T\"] n1 -> n3 [label=\"F\"] n2 -> n3 [] }");
+    });
 });
 
-describe('Not Evaluated If', () => {
-    it('', () => {
-        let code = 'function foo(x){\n   if(x < a) {\n        return x;\n   } else {\n   return 0;\n   }\n}';
-        let withoutArgs = substituteCode(parseCode(code), {}, '', false);
-        let withArgs = substituteCode(parseCode(code), {}, '1', true);
-        assert.deepEqual(getLines(withoutArgs['substituted'], withArgs['greenLines'], withArgs['redLines'], withoutArgs['ignoreRows']),
-            [
-                {line:'function foo(x) {', color:'black'},
-                {line:'    if (x < a) {', color:'black'},
-                {line:'        return x;', color:'black'},
-                {line:'    } else {', color:'black'},
-                {line:'        return 0;', color:'black'},
-                {line:'    }', color:'black'},
-                {line:'}', color:'black'}]);});
+describe('assignmentExpression', ()=>{
+    it('test subtitute code',()=>{
+        assert.deepEqual(evaluate(parseCode('x = y + 1'), {y: 1}), true);
+    });
 });
 
-describe('While Statement', () => {
-    it('', () => {
-        let code = 'function foo(x){\n   while(x[1] < x[2]) {\n        x[1] = x[1] + x[2];\n        x[2]++;\n   }\n    return x;\n}';
-        let withoutArgs = substituteCode(parseCode(code), {}, '', false);
-        let withArgs = substituteCode(parseCode(code), {}, '[1,2,3]', true);
-        assert.deepEqual(getLines(withoutArgs['substituted'], withArgs['greenLines'], withArgs['redLines'], withoutArgs['ignoreRows']),
-            [
-                {line:'function foo(x) {', color:'black'},
-                {line:'    while (x[1] < x[2]) {', color:'black'},
-                {line:'        x[1] = x[1] + x[2];', color:'black'},
-                {line:'        x[2]++;', color:'black'},
-                {line:'    }', color:'black'},
-                {line:'    return x;', color:'black'},
-                {line:'}', color:'black'}]);});
+describe('MemberExpression', ()=>{
+    it('test subtitute code',()=>{
+        assert.deepEqual(evaluate(parseCode('x[0] < 1'), {x: [1]}), true);
+    });
 });
 
-
-describe('Symbolic - from assignment', () => {
-    it('', () => {
-        let code = 'function foo(x, y, z){\n    let a = x + 1;\n    let b = a + y;\n    let c = 0;\n    if (b < z) {\n        c = c + 5;\n        return x + y + z + c;\n    } else if (b < z * 2) {\n        c = c + x + 5;\n        return x + y + z + c;\n    } else {\n        c = c + z + 5;\n        return x + y + z + c;\n    }\n}\n';
-        let withoutArgs = substituteCode(parseCode(code), {}, '', false);
-        let withArgs = substituteCode(parseCode(code), {}, '1,2,3', true);
-        assert.deepEqual(getLines(withoutArgs['substituted'], withArgs['greenLines'], withArgs['redLines'], withoutArgs['ignoreRows']),
-            [
-                {line:'function foo(x, y, z) {', color:'black'},
-                {line:'    if (x + 1 + y < z) {', color:'red'},
-                {line:'        return x + y + z + 5;', color:'black'},
-                {line:'    } else if (x + 1 + y < z * 2) {', color:'green'},
-                {line:'        return x + y + z + (0 + x + 5);', color:'black'},
-                {line:'    } else {', color:'red'},
-                {line:'        return x + y + z + (0 + z + 5);', color:'black'},
-                {line:'    }', color:'black'},
-                {line:'}', color:'black'}]);});
+describe('BinaryExpression', ()=>{
+    it('test subtitute code',()=>{
+        assert.deepEqual(evaluate(parseCode('x < 1'), {x: 3}), true);
+    });
 });
 
-describe('Array Assignment', () => {
-    it('', () => {
-        let code = 'let y = [7 ,8, 9];\nfunction foo(y){\n   let a = [4 ,5, 6];\n   if(a[0] < y[0]) {\n        return y[1];\n   } else {\n   return a[2];\n   }\n}';
-        let withoutArgs = substituteCode(parseCode(code), {}, '', false);
-        let withArgs = substituteCode(parseCode(code), {}, '[1,2,3]', true);
-        assert.deepEqual(getLines(withoutArgs['substituted'], withArgs['greenLines'], withArgs['redLines'], withoutArgs['ignoreRows']),
-            [
-                {line:'let y = [    7,    8,    9];', color:'black'},
-                {line:'function foo(y) {', color:'black'},
-                {line:'    if (4 < y[0]) {', color:'red'},
-                {line:'        return y[1];', color:'black'},
-                {line:'    } else {', color:'green'},
-                {line:'        return 6;', color:'black'},
-                {line:'    }', color:'black'},
-                {line:'}', color:'black'}]);});
+describe('BinaryExpression2', ()=>{
+    it('test subtitute code',()=>{
+        assert.deepEqual(evaluate(parseCode('x < 2'), {x: 1}), true);
+    });
 });
 
-describe('Substitute array property', () => {
-    it('', () => {
-        let code = 'function foo(x,y){\n   let a = y+1\n   if(x[y] < x[y+1]) {\n        return x[a];\n   } else {\n   return x[a-1];\n   }\n}'; let args = '[1,2,3],1';
-        let withoutArgs = substituteCode(parseCode(code), {}, '', false);
-        let withArgs = substituteCode(parseCode(code), {}, args, true);
-        assert.deepEqual(getLines(withoutArgs['substituted'], withArgs['greenLines'], withArgs['redLines'], withoutArgs['ignoreRows']),
-            [
-                {line:'function foo(x, y) {', color:'black'},
-                {line:'    if (x[y] < x[y + 1]) {', color:'green'},
-                {line:'        return x[y + 1];', color:'black'},
-                {line:'    } else {', color:'red'},
-                {line:'        return x[y + 1 - 1];', color:'black'},
-                {line:'    }', color:'black'},
-                {line:'}', color:'black'}]);});
+describe('member', ()=>{
+    it('test subtitute code',()=>{
+        assert.deepEqual(evaluate(parseCode('x[0] = 1'), {x: [3]}), true);
+    });
 });
 
-describe('Literal If', () => {
-    it('', () => {
-        let code = 'function foo(){\n   if(true) {\n        return 1;\n   } else {\n   return 0;\n   }\n}';
-        let withoutArgs = substituteCode(parseCode(code), {}, '', false);
-        let withArgs = substituteCode(parseCode(code), {}, '', true);
-        assert.deepEqual(getLines(withoutArgs['substituted'], withArgs['greenLines'], withArgs['redLines'], withoutArgs['ignoreRows']),
-            [
-                {line:'function foo() {', color:'black'},
-                {line:'    if (true) {', color:'green'},
-                {line:'        return 1;', color:'black'},
-                {line:'    } else {', color:'red'},
-                {line:'        return 0;', color:'black'},
-                {line:'    }', color:'black'},
-                {line:'}', color:'black'}]);});
+describe('assignmentExpression of array', ()=>{
+    it('test subtitute code',()=>{
+        assert.deepEqual(evaluate(parseCode('x = [1]'), {x: [3]}), true);
+    });
 });
